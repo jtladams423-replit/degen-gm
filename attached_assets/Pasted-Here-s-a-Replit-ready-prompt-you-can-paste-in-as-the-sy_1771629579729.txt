@@ -1,0 +1,103 @@
+Here’s a Replit-ready prompt you can paste in as the “system / project brief” for the Replit agent. It tells it to wire together: (1) an NBA mock draft import, (2) a multi‑year team builder with salaries and FA dates, and (3) a trade machine that respects salary cap rules. [en.wikipedia](https://en.wikipedia.org/wiki/NBA_salary_cap)
+
+***
+
+### Replit project prompt
+
+You are helping build a web app that combines an NBA mock draft tracker, a multi‑year team builder, and a trade machine that respects NBA salary cap rules. The stack should be simple and Replit‑friendly: a Python FastAPI backend with a lightweight HTML/JavaScript frontend, or Node/Express if easier.
+
+Core concepts:
+
+- A “mock draft” is a list of drafted players with: player id, name, position, current team, pick number, draft year, and their rookie-scale or contract details.
+- A “team builder” is a roster view for a selected NBA team that shows players, their salaries by year for at least 5 seasons into the future, contract length, options (team/player), and free agent year.
+- A “trade machine” lets the user propose trades between teams and checks if they are legal under NBA salary cap trade matching rules.
+
+Data model and storage:
+
+1. Create backend models for:
+   - Team: id, name, abbreviation, conference, division, current cap space, tax status.
+   - Player: id, name, position, age, current team id, contract_start_year, contract_end_year, salary_by_year (dictionary year → amount), option_type (none / team / player), bird_rights flag.
+   - DraftPick: id, year, round, overall_pick, original_team_id, current_team_id, protections (optional).
+   - MockDraftEntry: mock_id, draft_year, pick_overall, team_id, player_id, player_name, position, projected_salary_by_year, contract_end_year, free_agent_year.
+   - TradeProposal: id, list of “legs” where each leg is {from_team_id, to_team_id, player_ids, pick_ids} plus computed salary in/out.
+
+2. Persist data in a simple SQLite database with SQLAlchemy (or equivalent in Node with Prisma/Knex). Include seed scripts or sample JSON to:
+   - Load a current list of NBA teams.
+   - Load a small sample of players with real‑looking salaries and contract lengths.
+   - Allow importing a mock draft from a JSON or CSV file that the user uploads (file format documented clearly in the code comments).
+
+Mock draft integration:
+
+3. Implement an endpoint and UI flow to “Import Mock Draft”:
+   - Accept a CSV or JSON file where each row/object includes: draft_year, pick_overall, team_abbrev, player_name, position, projected_salary_year1, contract_length_years (and optionally full salary_by_year).
+   - On import, create Player and MockDraftEntry records as needed.
+   - Associate drafted players with their drafting team’s roster in the team builder for that draft year.
+
+4. In the team builder, provide a toggle or dropdown that:
+   - Selects a base year (e.g., current season).
+   - Applies mock draft picks for that year onto rosters (rookies appear on their drafted team with projected salaries by year).
+   - Allows saving multiple separate mock drafts (mock_id) and switching between them.
+
+Multi‑year team builder (5+ years):
+
+5. For a selected team and mock draft:
+   - Display a table with columns: Player, Position, Age, Salary Y1–Y5 (and more if available), Contract Ends (year), Free Agent Type (UFA/RFA), Bird Rights (if available), Notes.
+   - Compute and display team totals per season: total salary, cap space, tax line over/under, open roster spots.
+   - Mark the year each player becomes a free agent as: free_agent_year = contract_end_year + any option year if exercised.
+   - Include controls to filter by year, sort by salary, and hide/show players no longer under contract in a given season.
+
+6. Implement simple salary projection logic for missing future salaries:
+   - If only year 1 salary and contract_length_years are provided, assume a percentage raise per year (e.g., 5–8%) or a flat salary; make this percentage configurable.
+   - Store the computed salary_by_year on the Player or MockDraftEntry so it is consistent across the app.
+
+Dynamic roster editing:
+
+7. Allow the user to:
+   - Move a player to a different team manually (e.g., to reflect real‑world trades or signings) from the team builder UI.
+   - Edit contract details (salary for a specific year, contract_end_year, option flags).
+   - Add or remove players (e.g., undrafted free agents, buyouts).
+   - Automatically recalculate team totals and cap space whenever the roster changes.
+
+8. Provide an “activity log” or change history per team so the user can see what moves they made relative to the imported mock draft baseline.
+
+Trade machine with cap rules:
+
+9. Implement a “trade machine” view that lets users build trades between 2–4 teams:
+   - For each team, show its current players and picks.
+   - Allow the user to add players and picks to “Outgoing” and “Incoming” columns.
+   - Show salary out, salary in, and net change for each team.
+
+10. Implement core NBA trade matching logic based on current salary cap rules:
+   - For teams above or near the tax line or apron, they generally cannot take back significantly more salary than they send out; implement the 125% + small buffer rule or simplified modern equivalent to start (e.g., outgoing * 1.25 + 100,000 for taxpaying teams, sliding scale for non-taxpayers as per current CBA ranges). [sportsbusinessclassroom](https://sportsbusinessclassroom.com/understanding-trade-matching-in-the-new-collective-bargaining-agreement/)
+   - Respect hard-cap and apron constraints in a simplified way: teams above the second apron cannot receive more salary than they send out, and cannot aggregate certain exceptions. It is OK to start with: “if team is above apron threshold, incoming_salary ≤ outgoing_salary”.
+   - Validate roster size limits (minimum and maximum players per team).
+   - Return a clear verdict for each proposed trade: “Trade is allowed / not allowed” with a human-readable explanation listing which rules passed or failed.
+
+11. Keep the salary cap numbers and apron thresholds configurable:
+   - Define a configuration object or table with: salary_cap_by_year, tax_line_by_year, first_apron_by_year, second_apron_by_year.
+   - Allow the user to edit these values through a settings panel so they can update for future seasons.
+
+User interface:
+
+12. Build a single-page style UI (can be simple HTML + vanilla JS) with three primary tabs:
+   - “Mock Drafts”: Import mock, view picks, link to team rosters.
+   - “Team Builder”: Choose team + mock draft + year, view multi-year cap sheet, edit rosters and contracts inline, see projected cap and free agent timing.
+   - “Trade Machine”: Select teams, propose trades, validate against cap rules, and apply trades to the underlying rosters.
+
+13. For each tab:
+   - Use clear tables and forms (no heavy styling needed).
+   - Show computed summaries at the top (cap room, tax status, total salary for the selected year).
+   - Provide buttons like “Apply Trade to Rosters”, “Reset to Imported Mock”, and “Save Scenario As…” so the user can experiment with futures without losing the base mock.
+
+Developer experience:
+
+14. Include:
+   - A README that explains project purpose, data model, how to import a mock draft file (with example JSON/CSV), and how the trade rules are simplified relative to the real CBA.
+   - Seed data files for at least one season and one sample mock draft so the app is functional immediately.
+   - Clear separation of concerns: routes / controllers, data models, trade logic, and front-end JS modules.
+
+15. Prioritize correctness and clarity of the trade-checking logic and cap projections over visual design. Make the code easy to extend so more detailed CBA rules can be added later.
+
+***
+
+If you tell me your preferred stack (Python vs Node) and if you want to hit any live NBA data APIs vs keeping this fully offline, I can turn this into a more opinionated version with concrete file structure and an example mock-draft JSON schema.

@@ -1,0 +1,155 @@
+You are helping build a small web app on Replit that shows live NFL Draft data using Sportradar’s NFL Draft APIs.
+
+## Goal
+
+Create a backend + lightweight UI that:
+- Connects to Sportradar’s NFL Draft feeds (Draft Summary, Prospects, Top Prospects, Trades, and Push Draft Picks) for a selected draft year.
+- Periodically pulls or subscribes to the draft feeds in near real time during the draft window.
+- Exposes this data to the front-end via REST or WebSocket so the page updates in real time without manual refresh.
+
+Use the official Sportradar NFL Draft integration guide and reference endpoints as your model for the data shape and timing:
+- Prospects: https://developer.sportradar.com/football/reference/nfl-prospects
+- Top Prospects: https://developer.sportradar.com/football/reference/nfl-top-prospects
+- Draft Summary: https://developer.sportradar.com/football/reference/nfl-draft-summary
+- Trades: https://developer.sportradar.com/football/reference/nfl-trades
+- Push Draft Picks: https://developer.sportradar.com/football/reference/nfl-push-draft-picks
+These feeds include draft metadata, rounds, picks, teams, prospects, and trades for a given year.[page:1]
+
+Assume the user will provide:
+- A valid Sportradar API key as an environment variable: SPORTRADAR_API_KEY
+- A region and language (e.g., “us” and “en”) that match their Sportradar NFL Draft plan.
+Build the code so these values are configurable.
+
+## Tech stack
+
+- Backend: Python (FastAPI or Flask) running on Replit.
+- Front-end: Simple HTML/JS or a minimal React front-end served by the backend.
+- HTTP client: `httpx` or `requests` for standard REST calls, `websockets` (or `websocket-client`) for push feeds if needed.
+- Real-time UI updates: 
+  - Option 1 (simpler): Backend polls Draft Summary and Trades every 2 seconds during the draft and exposes a `/draft/live` endpoint the front-end polls.[page:1]
+  - Option 2 (richer): Backend manages a WebSocket endpoint that pushes updates to the client when new data arrives.
+
+Prefer Option 1 first, then add WebSocket support if there is time.
+
+## Key Sportradar behavior
+
+Model your polling intervals and endpoints according to the integration guide:
+
+- Prospects & Top Prospects:
+  - Available from mid/late March and can be pulled on demand before, during, or after the draft.
+  - TTL/cache is 2 seconds; you can hit these on-demand or at a low frequency (e.g., every 30–60 seconds) when the UI is open.[page:1]
+
+- Draft Summary:
+  - Contains pre-draft pick order and live pick updates during the draft.
+  - Updates in real time, TTL/cache 2 seconds.
+  - When the draft is live, you can hit this endpoint as often as every 2 seconds (matching TTL).[page:1]
+
+- Trades:
+  - Trade changes affecting picks during the draft; should be requested along with Draft Summary starting about 10 minutes before the draft.[page:1]
+
+- Push Draft Picks:
+  - Exposes the same information as Draft Summary but through a single long-lived connection to optimize real-time updates and API usage.[page:1]
+  - Implement this as an advanced option.
+
+Design the backend so that:
+- Before the draft, it fetches and caches prospects/top prospects for the selected year.
+- During the draft window, it either:
+  - Polls Draft Summary and Trades every 2 seconds; or
+  - Maintains a connection to Push Draft Picks and updates an in-memory state.
+
+## Backend design
+
+Create a module structure like:
+
+- `config.py`
+  - Load SPORTRADAR_API_KEY, region, language, and base URLs.
+- `sportradar_client.py`
+  - Functions for each feed:
+    - `get_prospects(year: int) -> dict`
+    - `get_top_prospects(year: int) -> dict`
+    - `get_draft_summary(year: int) -> dict`
+    - `get_trades(year: int) -> dict`
+    - `open_push_draft_picks(year: int)` (stub or simple long-poll if full WebSocket is too heavy).
+  - Include rate-limit-safe retry/backoff patterns.
+
+- `draft_state.py`
+  - In-memory store:
+    - `current_prospects`, `current_top_prospects`
+    - `current_summary`, `current_trades`
+  - Helper to merge Draft Summary rounds/picks into a flat list of picks (id, round, overall, team, prospect, traded flags, trades array) similar to the example JSON from the guide.[page:1]
+
+- `main.py` (FastAPI/Flask)
+  - Endpoints:
+    - `GET /draft/{year}/prospects`
+    - `GET /draft/{year}/top-prospects`
+    - `GET /draft/{year}/summary`
+    - `GET /draft/{year}/trades`
+    - `GET /draft/{year}/live` – returns a combined snapshot: prospects + flat list of picks + trades.
+  - Background task that, when “live mode” is enabled (e.g., `/draft/{year}/start-live`), polls:
+    - Draft Summary every 2 seconds.
+    - Trades every 2 seconds.
+  - Optionally, a WebSocket endpoint `/ws/draft/{year}` that streams updates when the in-memory state changes.
+
+Implementation details:
+
+- Use async FastAPI with `httpx.AsyncClient` for better concurrency.
+- For polling, use `asyncio.create_task` or FastAPI’s `@repeat_every` pattern to refresh state.
+- Normalize the JSON from Draft Summary to make it easy for the UI to consume (e.g., flatten `rounds[].picks[]` into a single `picks` list with round and overall fields).[page:1]
+
+## Front-end behavior
+
+Implement a minimal UI that:
+
+- Lets the user choose a draft year (e.g., 2024, 2025).
+- Shows:
+  - Current draft metadata (start_date, end_date, status).
+  - A live “draft board” table showing picks as they come in, using fields like:
+    - Round, Overall, Team alias, Player name, Position, College, Traded flag.
+  - Side panel listing top prospects and remaining prospects (from `/prospects` and `/top-prospects`).
+- Polls `/draft/{year}/live` every 2–3 seconds while the draft is in progress.
+- Highlights new picks since the last poll (client-side diff on pick IDs).
+
+Use simple JS `setInterval` polling first. If a WebSocket endpoint exists, add a feature flag to switch to WebSocket.
+
+## Example code tasks for you to generate
+
+1. `sportradar_client.py`
+   - Write a typed Python client that builds URLs for:
+     - Prospects: `/nfl/…/prospects/{year}.json`
+     - Top Prospects: `/nfl/…/top_prospects/{year}.json`
+     - Draft Summary: `/nfl/…/draft/summary/{year}.json`
+     - Trades: `/nfl/…/trades/{year}.json`
+   - Put the actual path segments behind config variables so the user can align them with their specific Sportradar package.
+
+2. `draft_state.py`
+   - Implement a `DraftState` class with:
+     - `update_from_summary(summary_json: dict)`
+     - `update_trades(trades_json: dict)`
+     - `to_live_payload() -> dict` returning a JSON that front-end can render.
+
+3. `main.py` (FastAPI)
+   - Setup FastAPI app, include endpoints above.
+   - Implement a background task that polls Draft Summary and Trades every 2 seconds for the active year.
+   - Provide an endpoint to set the active year and start/stop live polling.
+
+4. Front-end template
+   - A simple HTML/JS page that:
+     - Fetches `/draft/{year}/live` on load and every 2–3 seconds.
+     - Renders a table similar to the example Draft Summary JSON shown in the guide (round 1 picks, etc.).[page:1]
+
+## Important constraints
+
+- Do NOT hardcode my Sportradar key. Always read from environment variables.
+- Keep polling frequency at or above the recommended TTL (2 seconds) during the draft.[page:1]
+- Handle edge cases:
+  - Draft status not yet “in progress” (show countdown / “Draft not live yet”).
+  - Draft status “closed” (stop polling, show final board).
+- Write docstrings that reference “Sportradar NFL Draft integration guide – Draft, Prospects, Top Prospects, Trades, Push Draft Picks feeds” for clarity.[page:1]
+
+When you generate code, focus on:
+- A clean, minimal first version.
+- Separation between:
+  1) External API calls,
+  2) In-memory state,
+  3) HTTP endpoints,
+  4) Front-end rendering.

@@ -1,0 +1,446 @@
+
+65	 
+Arizona
+66	 
+Tennessee
+67	 
+Las Vegas
+68	 
+Philadelphia
+  NYJ 
+69	 
+Houston
+  NYG 
+70	 
+Cleveland
+71	 
+Washington
+72	 
+Cincinnati
+73	 
+New Orleans
+74	 
+Kansas City
+75	 
+Miami
+76	 
+Pittsburgh
+  DAL 
+77	 
+Tampa Bay
+78	 
+Indianapolis
+79	 
+Atlanta
+80	 
+Baltimore
+81	 
+Jacksonville
+  DET 
+82	 
+Minnesota
+83	 
+Carolina
+84	 
+Green Bay
+85	 
+Pittsburgh
+86	 
+LA Chargers
+87	 
+Miami
+  PHI 
+88	 
+Jacksonville
+89	 
+Chicago
+90	 
+Miami
+  HOU 
+91	 
+Buffalo
+92	 
+San Francisco
+93	 
+LA Rams
+94	 
+Denver
+95	 
+New England
+96	 
+Seattle
+97	 
+Minnesota
+98	 
+Philadelphia
+99	 
+Pittsburgh
+100	 
+Jacksonville
+  DET 
+4th Round
+101	 
+Tennessee
+102	 
+Las Vegas
+103	 
+NY Jets
+104	 
+Arizona
+105	 
+NY Giants
+106	 
+Houston
+  WSH 
+107	 
+Cleveland
+108	 
+Denver
+  NO 
+109	 
+Kansas City
+110	 
+Cincinnati
+111	 
+Miami
+112	 
+Dallas
+113	 
+Indianapolis
+114	 
+Atlanta
+115	 
+Baltimore
+116	 
+Tampa Bay
+117	 
+Las Vegas
+  MIN 
+118	 
+Detroit
+119	 
+Carolina
+120	 
+Green Bay
+121	 
+Pittsburgh
+122	 
+Philadelphia
+123	 
+LA Chargers
+124	 
+Jacksonville
+125	 
+New England
+  CHI 
+126	 
+Buffalo
+127	 
+San Francisco
+128	 
+Houston
+129	 
+Chicago
+  LAR 
+130	 
+Denver
+131	 
+New England
+132	 
+New Orleans
+  SEA 
+133	 
+San Francisco
+134	 
+Las Vegas
+135	 
+Pittsburgh
+136	 
+New Orleans
+137	 
+Philadelphia
+138	 
+San Francisco
+5th Round
+139	 
+Cleveland
+  LV 
+140	 
+Tennessee
+  NYJ 
+141	 
+Arizona
+142	 
+Tennessee
+143	 
+NY Giants
+144	 
+Cleveland
+145	 
+Washington
+146	 
+Kansas City
+147	 
+Cleveland
+  CIN 
+148	 
+New Orleans
+149	 
+Miami
+150	 
+Dallas
+151	 
+Philadelphia
+  ATL 
+152	 
+Baltimore
+153	 
+Tampa Bay
+154	 
+Indianapolis
+155	 
+Detroit
+156	 
+Carolina
+  MIN 
+157	 
+Carolina
+158	 
+Green Bay
+159	 
+Pittsburgh
+160	 
+Baltimore
+  LAC 
+161	 
+Minnesota
+  PHI 
+162	 
+Jacksonville
+163	 
+Chicago
+164	 
+Jacksonville
+  SF 
+165	 
+Houston
+166	 
+Buffalo
+167	 
+LA Rams
+168	 
+Denver
+169	 
+New England
+170	 
+New Orleans
+  SEA 
+171	 
+San Francisco
+172	 
+Baltimore
+173	 
+Baltimore
+174	 
+Las Vegas
+175	 
+NY Jets
+176	 
+Kansas City
+177	 
+Dallas
+178	 
+NY Jets
+179	 
+Philadelphia
+180	 
+Detroit
+6th Round
+181	 
+Las Vegas
+  NYJ 
+182	 
+Arizona
+183	 
+Tennessee
+184	 
+Las Vegas
+185	 
+NY Giants
+186	 
+Washington
+187	 
+Detroit
+  CLE 
+188	 
+Cincinnati
+189	 
+New Orleans
+190	 
+New England
+  KC 
+191	 
+NY Giants
+  MIA 
+192	 
+NY Giants
+  DAL 
+193	 
+NY Jets
+  BAL 
+194	 
+Tampa Bay
+195	 
+Minnesota
+  IND 
+196	 
+Atlanta
+197	 
+Washington
+  MIN 
+198	 
+Cincinnati
+  DET 
+199	 
+Carolina
+200	 
+Green Bay
+201	 
+New England
+  PIT 
+202	 
+Jacksonville
+  PHI 
+203	 
+LA Chargers
+204	 
+Detroit
+  JAX 
+205	 
+Cleveland
+  CHI 
+206	 
+LA Rams
+  HOU 
+207	 
+NY Jets
+  BUF 
+208	 
+New England
+  SF 
+209	 
+LA Rams
+210	 
+Baltimore
+  DEN 
+211	 
+New England
+212	 
+Seattle
+213	 
+Pittsburgh
+214	 
+LA Chargers
+215	 
+Pittsburgh
+216	 
+Dallas
+217	 
+Indianapolis
+7th Round
+218	 
+Arizona
+219	 
+NY Jets
+  TEN 
+220	 
+Las Vegas
+221	 
+Buffalo
+  NYJ 
+222	 
+Dallas
+  NYG 
+223	 
+Detroit
+  CLE 
+224	 
+Washington
+225	 
+Pittsburgh
+  NO 
+226	 
+Dallas
+  KC 
+227	 
+Cincinnati
+228	 
+Miami
+229	 
+Buffalo
+  DAL 
+230	 
+Tampa Bay
+231	 
+Indianapolis
+232	 
+Atlanta
+233	 
+LA Rams
+  BAL 
+234	 
+Jacksonville
+  DET 
+235	 
+Minnesota
+236	 
+Carolina
+237	 
+Green Bay
+238	 
+Pittsburgh
+239	 
+Tennessee
+  LAC 
+240	 
+Chicago
+  PHI 
+241	 
+Minnesota
+  JAX 
+242	 
+Chicago
+243	 
+NY Jets
+  BUF 
+244	 
+Houston
+  SF 
+245	 
+Houston
+246	 
+Jacksonville
+  LAR 
+247	 
+Denver
+248	 
+New England
+249	 
+Cleveland
+  SEA 
+250	 
+Baltimore
+251	 
+LA Rams
+252	 
+Baltimore
+253	 
+Indianapolis
+254	 
+Green Bay
+255	 
+Denver
+256	 
+LA Rams
+257	 
+Green Bay

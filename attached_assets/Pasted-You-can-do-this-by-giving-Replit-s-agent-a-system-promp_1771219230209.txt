@@ -1,0 +1,236 @@
+You can do this by giving Replit’s agent a “system prompt” that defines the app’s scope, data sources, and how to respond to user actions like “run a 7‑round mock for 2026 from pick 1.01.” Below is a starting prompt you can paste into Replit and then iterate on.
+
+***
+
+## High‑level design you’re asking for
+
+- Ingest NFL **combine stats**, draft order, and historical draft results for multiple years. [youtube](https://www.youtube.com/watch?v=gwArG5HKwsI)
+- Let users run interactive **mock drafts** (by team, by user, or fully AI‑driven). [sleeper](https://sleeper.com/mockdraft)
+- Import and store **previous mock drafts** (JSON/CSV files) done in prior years and reuse them.  
+- Track **year‑over‑year performance** of drafted players and identify “value picks” vs “reaches” based on actual outcomes (e.g., AV, WAR, fantasy production, or custom scoring).
+
+You’ll still need to wire in actual APIs or CSVs for combine and draft data (e.g., a custom scraper, Kaggle datasets, or a paid stats API), but the prompt below tells Replit’s agent how to structure the code and workflow.
+
+***
+
+## Replit agent prompt (drop‑in template)
+
+You can paste this as the main prompt/instructions for the Replit AI in your project:
+
+```text
+You are an assistant helping build a Python web app that supports interactive NFL draft analysis and mock drafts.
+
+## App goals
+
+1. Import and store NFL combine stats for multiple years (e.g., height, weight, 40 time, vertical, shuttle, position, college, year).
+2. Import and store historical NFL draft data (draft year, round, pick overall, team, player, position, college, etc.).
+3. Track current and future draft classes, including draft order by team for a selected year.
+4. Allow users to:
+   - Run interactive mock drafts by year.
+   - Choose drafting mode (user picks for a specific team or all teams, AI auto-picks, or mixed).
+   - Save and load previous mock drafts from local files (JSON or CSV) for any year.
+5. Provide year-over-year performance tracking for drafted players:
+   - Import player performance metrics by season (e.g., games played, PFF grade, Approximate Value, fantasy points, or custom scoring).
+   - Link performance stats back to each draft pick via player ID and draft year.
+   - Highlight value picks (outperformance vs typical expectations for that pick range) and reaches (underperformance vs expectations).
+
+## Tech stack and structure
+
+- Use Python (FastAPI or Flask) for the backend.
+- Use a simple web UI (FastAPI with Jinja templates or a small React/Vue front-end) that can run on Replit.
+- Persist data using SQLite (via SQLAlchemy or direct sqlite3) or simple local files (CSV/JSON) in a `data/` directory.
+- Organize code into modules:
+  - `data_models.py` for database models and schemas.
+  - `data_import.py` for importing combine stats, draft history, and performance data from CSV/JSON or external APIs.
+  - `mock_draft.py` for mock draft logic.
+  - `analysis.py` for year-over-year performance and value/reach scoring.
+  - `api.py` or `main.py` for FastAPI/Flask routes and app startup.
+  - `ui/` folder for templates or static front-end code.
+
+## Data requirements
+
+Design schemas that minimally support:
+
+1. CombineStats
+   - id
+   - player_id
+   - year
+   - name
+   - position
+   - college
+   - height
+   - weight
+   - forty_time
+   - vertical
+   - bench_reps
+   - shuttle
+   - three_cone
+   - broad_jump
+
+2. DraftPick
+   - id
+   - year
+   - round
+   - overall_pick
+   - team
+   - player_id
+   - player_name
+   - position
+   - college
+
+3. PlayerSeasonStats
+   - id
+   - player_id
+   - year
+   - games_played
+   - relevant stats (e.g., yards, TDs, tackles, sacks, etc. – flexible JSON or separate columns)
+   - composite_metric (e.g., Approximate Value or custom score)
+
+4. MockDraft
+   - id
+   - year
+   - created_at
+   - user_label (string for user-defined name, e.g. "2026 pre-combine mock v1")
+   - description
+
+5. MockPick
+   - id
+   - mock_draft_id
+   - round
+   - overall_pick
+   - team
+   - player_id (nullable if player not in DB)
+   - player_name
+   - position
+   - notes (e.g. "trade-down", "injury risk")
+
+Make it easy to import/export mock drafts as JSON arrays (one entry per pick) so users can bring in mocks from previous years and other tools.
+
+## Mock draft behavior
+
+Implement core features:
+
+1. Draft order:
+   - Load the draft order for a given year from a CSV or API.
+   - Support overrides to allow custom draft orders and trades (for now, stored in memory or as a separate `DraftOrder` table).
+
+2. Draft modes:
+   - "Single-team": user controls picks for a chosen team; AI picks for others.
+   - "All-teams user": user can make every pick.
+   - "All-teams AI": AI picks all players based on ranking logic.
+
+3. Player pool & rankings:
+   - Maintain a `Prospect` list for the current draft class with fields: name, position, college, combine stats, internal grade, and projected draft range (e.g., mid-1st, late-2nd, etc.).
+   - Implement simple ranking logic first (e.g., by internal grade and positional value).
+   - Later, allow custom ranking inputs or import from external CSV.
+
+4. User interface:
+   - UI should show:
+     - Current pick (round, overall, team).
+     - Best available players list with filters (position, college, etc.).
+     - Team needs (optional; simple list by team).
+     - Draft board summary (all picks so far).
+   - When a pick is made, update the draft board and advance to the next pick.
+   - Allow saving the current mock draft state as a `MockDraft` with associated `MockPick` entries.
+
+## Importing and reusing previous mock drafts
+
+- Implement endpoints or UI actions to:
+  - Upload a JSON or CSV file of a previous mock draft (with at least year, overall_pick, team, player_name, position).
+  - Map uploaded data to the `MockDraft` and `MockPick` schema.
+  - Display imported mock drafts alongside newly created ones.
+
+- Define a simple JSON format that users can rely on for external tools, for example:
+  [
+    {
+      "year": 2024,
+      "round": 1,
+      "overall_pick": 1,
+      "team": "CHI",
+      "player_name": "Caleb Williams",
+      "position": "QB",
+      "notes": "no trade"
+    },
+    ...
+  ]
+
+## Year-over-year performance & value vs reach
+
+Implement an analysis pipeline to:
+
+1. Join DraftPick or MockPick with PlayerSeasonStats using player_id and year.
+2. Compute:
+   - Cumulative performance over N seasons after draft (e.g., first 3 years).
+   - Per-year performance trajectories for each player.
+3. Define expected performance baselines for pick ranges:
+   - Example ranges: picks 1–5, 6–15, 16–32, 33–64, 65–100, 101–150, 151–200, 201+.
+   - For each range and position, compute the historical average and standard deviation of composite_metric.
+
+4. Value vs reach metrics:
+   - For a given draft or mock draft, calculate:
+     - Expected performance for that pick range and position based on historical baselines.
+     - Actual performance from PlayerSeasonStats.
+     - Value added = actual - expected.
+     - Reach = expected - actual (if negative value added beyond a threshold).
+
+5. Reporting:
+   - Build API endpoints and UI views to:
+     - Show a table per draft (real or mock) with columns:
+       - Pick, Team, Player, Position, Expected value, Actual value, Value added (positive), Reach (negative).
+     - Highlight value picks in green and reaches in red.
+     - Provide filters by team, position, pick range, and year.
+   - Provide a player detail page showing:
+     - Draft slot and team.
+     - Combine performance.
+     - Year-by-year performance stats and how they compare to historical expectations for similar picks.
+
+## User flows to support
+
+Support these main flows end to end:
+
+1. "Load historical data"
+   - Function(s) to import combine, draft, and performance data from existing CSV/JSON files located in a `data/` folder.
+   - Optionally stub out connectors for external APIs so they can be implemented later.
+
+2. "Run a mock draft"
+   - Select draft year and draft mode.
+   - Run through picks, allow user to select players, and generate AI suggestions when requested.
+   - Persist the final mock draft and allow exporting it as JSON/CSV.
+
+3. "Import past mock drafts"
+   - Upload file or paste JSON.
+   - Map to internal schema and save as a MockDraft with MockPicks.
+   - Render imported mocks in the UI with the same views as native mocks.
+
+4. "Evaluate drafts over time"
+   - Select a real draft year or a stored MockDraft.
+   - For each pick, compute and display value vs expectations based on historical baselines.
+   - Provide summary metrics by team, by draft, and by pick range.
+
+## Implementation guidance
+
+- Start by:
+  1) Defining SQLAlchemy models or equivalent DB schema.
+  2) Writing data import scripts for combine, draft, and performance CSV/JSON data.
+  3) Building endpoints for:
+     - Listing drafts and mock drafts.
+     - Creating and saving a new mock draft.
+     - Importing external mock drafts.
+     - Running the value/reach analysis for a given draft or mock.
+
+- For any external integrations (e.g., public NFL stats APIs), create clearly separated modules with placeholder functions and docstrings, so they can be fleshed out later.
+
+- Prioritize correctness and clarity of data modeling and analysis logic over complex UI styling.
+
+When you write code, always:
+- Include clear function names and docstrings.
+- Avoid hardcoding file paths; use configuration variables where appropriate.
+- Add small, focused tests or example calls to demonstrate how to use key functions.
+```
+
+***
+
+## How you might extend this
+
+- Add an endpoint like `/compare-mocks?team=SF&year=2024` to see how your mocks compared to actual draft results and compute “delta in value” between what you picked and what actually happened.  
+- If you give me which language/framework you prefer (pure FastAPI, Next.js front‑end + FastAPI, etc.) and any data source you plan to use, I can turn this into concrete starter files (models, routes, and one end‑to‑end example flow).
